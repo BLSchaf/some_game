@@ -20,11 +20,6 @@ menu_label = menu_font.render('Some Menu Title', False, (0,0,0))
 WINDOW.blit(menu_label, (130, round(HEIGHT*.33)))
 
 
-
-
-
-
-
 # Loop -------------------------------------------------------- #
 while True:
 
