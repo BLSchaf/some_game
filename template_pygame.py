@@ -107,7 +107,7 @@ def menu():
         if 112 <= pos[0] <= 355 and 258 <=pos [1] <=376:
             WINDOW.blit(TITLE2_IMG, (0,0))
             pygame.display.update()
-            #play_sound()
+            play_sound()
         else:
             pygame.mixer.music.fadeout(1000)
             WINDOW.blit(TITLE_IMG, (0,0))
@@ -122,7 +122,7 @@ def menu():
             
         
 def play_sound():
-    pygame.mixer.music.load('schiffshorn.mp3')
+    pygame.mixer.music.load('assets\schiffshorn.mp3')
     pygame.mixer.music.set_volume(0.02)
     pygame.mixer.music.play()
 
