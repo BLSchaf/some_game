@@ -32,7 +32,7 @@ class Drone():
         self.y = pos[1]
         self.r = 10
         self.color = (180, 180, 150)
-        self.vel = 10
+        self.vel = 9
         self.WIDTH = WIDTH
         self.HEIGHT = HEIGHT
 
@@ -75,6 +75,51 @@ class Line():
 
     def draw(self):
         pygame.draw.line(WINDOW, self.color, self.start, self.end)
+
+
+def slope(p1, p2):
+    print(p1, p2)
+    return (p2[1] - p1[1]) * 1./ (p2[0] - p1[0])
+   
+def y_intercept(slope, p1) :
+    return p1[1] - 1.* slope * p1[0] # y = mx+b -> b = y-mb | b:= y_intercept
+
+def intersect(line1, line2) :
+    min_allowed = 1e-5   # guard against overflow
+    big_value = 1e10     # use instead (if overflow would have occurred)
+    m1 = slope(line1[0], line1[1])
+    b1 = y_intercept(m1, line1[0])
+
+    m2 = slope(line2[0], line2[1])
+    b2 = y_intercept(m2, line2[0])
+
+    if abs(m1 - m2) < min_allowed:
+        x = big_value
+    else :
+        x = (b2 - b1) / (m1 - m2)
+      
+    y = m1 * x + b1
+    #y2 = m2 * x + b2
+    return (int(x),int(y))
+
+def segment_intersect(line1, line2):
+    intersection_pt = intersect(line1, line2)
+
+    if(line1[0][0] < line1[1][0]):
+        if intersection_pt[0] < line1[0][0] or intersection_pt[0] > line1[1][0]:
+            return None
+    else:
+        if intersection_pt[0] > line1[0][0] or intersection_pt[0] < line1[1][0]:
+            return None
+         
+    if(line2[0][0] < line2[1][0]):
+        if intersection_pt[0] < line2[0][0] or intersection_pt[0] > line2[1][0]:
+            return None
+    else:
+        if intersection_pt[0] > line2[0][0] or intersection_pt[0] < line2[1][0]:
+            return None
+
+    return intersection_pt
         
 
 
@@ -84,7 +129,16 @@ def update_window(drone, obstacle):
     pygame.draw.circle(WINDOW, (200, 200, 200), (CENTER), 30)
     drone.draw()
     obstacle.draw()
-    pygame.draw.line(WINDOW, (200, 50, 200), drone.pos, CENTER)
+    
+    intersection_pt = segment_intersect((obstacle.start, obstacle.end), (drone.pos, CENTER))
+
+    if intersection_pt:
+        pygame.draw.line(WINDOW, (220, 130, 80), drone.pos, CENTER)
+        pygame.draw.circle(WINDOW, (220, 220, 220), intersection_pt, 6, 1)
+    else:
+        pygame.draw.line(WINDOW, (130, 220, 80), drone.pos, CENTER)
+
+        
     pygame.display.update()
 
 
@@ -130,7 +184,7 @@ def play_sound():
 
 # Loop -------------------------------------------------------- #
 def main():
-    drone = Drone((WIDTH//2, HEIGHT//2))
+    drone = Drone((50, 50))
     obstacle = Line((random.randint(0, WIDTH), random.randint(0, HEIGHT)),
                     (random.randint(0, WIDTH), random.randint(0, HEIGHT)))
 
