@@ -81,9 +81,9 @@ def intersect(line1, line2) :
     b2 = y_intercept(m2, line2[0])
 
     if abs(m1 - m2) < min_allowed:
-      x = big_value
-    else :
-      x = (b2 - b1) / (m1 - m2)
+        x = big_value
+    else:
+        x = (b2 - b1) / (m1 - m2)
       
     y = m1 * x + b1
     #y2 = m2 * x + b2
@@ -92,19 +92,19 @@ def intersect(line1, line2) :
 def segment_intersect(line1, line2):
     intersection_pt = intersect(line1, line2)
 
-    if (line1[0][0] < line1[1][0]) :
-      if intersection_pt[0] < line1[0][0] or intersection_pt[0] > line1[1][0]:
-         return None
-    else :
-      if intersection_pt[0] > line1[0][0] or intersection_pt[0] < line1[1][0]:
-         return None
+    if (line1[0][0] < line1[1][0]):
+        if intersection_pt[0] < line1[0][0] or intersection_pt[0] > line1[1][0]:
+            return None
+    else:
+        if intersection_pt[0] > line1[0][0] or intersection_pt[0] < line1[1][0]:
+            return None
          
     if (line2[0][0] < line2[1][0]):
-      if intersection_pt[0] < line2[0][0] or intersection_pt[0] > line2[1][0]:
-         return None
-    else :
-      if intersection_pt[0] > line2[0][0] or intersection_pt[0] < line2[1][0]:
-         return None
+        if intersection_pt[0] < line2[0][0] or intersection_pt[0] > line2[1][0]:
+            return None
+    else:
+        if intersection_pt[0] > line2[0][0] or intersection_pt[0] < line2[1][0]:
+            return None
 
     return intersection_pt
 
