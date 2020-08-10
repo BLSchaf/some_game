@@ -34,6 +34,8 @@ class Drone():
         self.vel = 3
         self.charging = False
         self.not_charging = False
+        self.life = 100
+        
 
     def move(self):
         keys = pygame.key.get_pressed()
@@ -69,9 +71,41 @@ class Obstacle():
     def __init__(self, points):
         self.points = points
         self.color = (220, 130, 80)
+        self.x_vel = 0.5
+        self.y_vel = 0.3
+
+    def __len__(self):
+        return len(self.points)
+
+    '''
+    def get_width(self):
+        min_x = WIDTH
+        max_x = 0
+        for point in self.points:
+            if point[0] > max_x:
+                max_x = point[0]
+            elif point[0] < min_x:
+                min_x = point[0]
+        return max_x - min_x
+
+    def get_height(self):
+        min_y = HEIGHT
+        max_y = 0
+        for point in self.points:
+            if point[1] > max_y:
+                max_x = point[1]
+            elif point[1] < min_y:
+                min_y = point[1]
+        return max_y - min_y
+    '''
+
+    def move(self):
+        self.x_vel *= random.randint(90,110) / 100
+        self.y_vel *= random.randint(90,110) / 100
+        self.points = [(i + self.x_vel, j + self.y_vel) for i, j in self.points]
 
     def draw(self):
-        pygame.draw.aalines(WINDOW, self.color, True, self.points, -1)
+        pygame.draw.polygon(WINDOW, self.color, self.points)
 
 
 
@@ -121,8 +155,6 @@ def segment_intersect(line1, line2):
     return intersection_pt
 
 
-
-
 def play_music(music, pos=0, vol=0.5):
     pygame.mixer.music.set_volume(vol)
     #pygame.mixer.music.fadeout(1000)
@@ -130,14 +162,15 @@ def play_music(music, pos=0, vol=0.5):
     pygame.mixer.music.load(f'assets\{music}')
     pygame.mixer.music.play(-1, pos)
 
-def stop_music(fadeout=True):
+def stop_music(fadeout=False):
     if fadeout:
         pygame.mixer.music.fadeout(300)
-    pygame.mixer.music.stop()    
+    else:
+        pygame.mixer.music.stop()    
     
 
 # Update Game Window ---------------------------------------------- #
-def update_window(drone, obstacle, intersection_pt, line_of_sight=False):
+def update_window(drone, obstacles, intersection_pt, line_of_sight=False):
     '''
     Updates the window
     drone: Drone instance
@@ -146,12 +179,18 @@ def update_window(drone, obstacle, intersection_pt, line_of_sight=False):
     WINDOW.fill((50, 50, 50))
     
     pygame.draw.circle(WINDOW, (220, 220, 220), CENTER, 30)
+
+    pygame.draw.rect(WINDOW, (80,80,80), (WIDTH - 122, 18, 104, 24))
+    pygame.draw.rect(WINDOW, (220, 220, 220), (WIDTH - 120, 20, drone.life, 20))
+    
     drone.draw()
-    obstacle.draw()
+    for obstacle in obstacles:
+        obstacle.draw()
 
     if not line_of_sight:
-        pygame.draw.aaline(WINDOW, (220, 130, 80), drone.pos, CENTER)
-        pygame.draw.circle(WINDOW, (220, 220, 220), intersection_pt, 6, 1)
+        pass
+        #pygame.draw.aaline(WINDOW, (220, 130, 80), drone.pos, CENTER)
+        #pygame.draw.circle(WINDOW, (220, 220, 220), intersection_pt, 6, 1)
     else:
         pygame.draw.aaline(WINDOW, (130, 220, 80), drone.pos, CENTER)
     
@@ -204,18 +243,50 @@ def menu():
 # Game Loop ------------------------------------------------------- #
 def game():
     drone = Drone((50, 50))
-    obstacle = Obstacle([(10,10), (20,40), (50,20)])
+    obstacles = [Obstacle([(50,50), (70,100), (120,70), (130,50)]),
+                 Obstacle([(100,130), (120,160), (130,150)])]
 
     line_of_sight = False
+
+
 
     run = True
     while run:
         
-        intersection_pt = segment_intersect((obstacle.points[0], obstacle.points[1]),
-                                            (drone.pos, CENTER))
+        '''
+        for obstacle in obstacles:
+             POLYGON_WINDOW = pygame.surface.Surface(SIZE).convert_alpha()
+             POLYGON_WINDOW.fill((0,0,0,0))
+             obstacle.draw(POLYGON_WINDOW)
+             WINDOW.blit(POLYGON_WINDOW, (100,100))
+        '''
+            
+        
+        for obstacle in obstacles:
+            for i in range(len(obstacle)):
+                intersection_pt = segment_intersect((obstacle.points[i],
+                                                     obstacle.points[(i+1)%(len(obstacle))]),
+                                                    (drone.pos, CENTER))
+                
+                if intersection_pt:
+                    break
+            else:
+                # Continue if the inner loop wasn't broken.
+                continue
+            # Inner loop was broken, break the outer.
+            break
+        
+        # or write the loops as a function and use return instead of break
+                
+            
         if not intersection_pt:
             line_of_sight = True
+            if drone.life > 0+0.1:
+                drone.life -= 0.1
+            
         else:
+            if drone.life < 100-0.1:
+                drone.life += 0.1
             line_of_sight = False
         
         if not intersection_pt and not drone.charging:
@@ -238,12 +309,15 @@ def game():
             if event.type == pygame.KEYDOWN: # event has no key attribute
                 if event.key == pygame.K_ESCAPE:
                     run = False
+                    stop_music(fadeout=True)
 
         # Do Stuff 
         drone.move()
+        for obstacle in obstacles:
+            obstacle.move()
 
         # Update window
-        update_window(drone, obstacle, intersection_pt, line_of_sight)
+        update_window(drone, obstacles, intersection_pt, line_of_sight)
         main_clock.tick(FPS)
 
     
