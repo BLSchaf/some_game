@@ -120,10 +120,19 @@ def y_intercept(slope, p1):
 def intersect(line1, line2) :
     min_allowed = 1e-5   # guard against overflow
     big_value = 1e10     # use instead (if overflow would have occurred)
-    m1 = slope(line1[0], line1[1])
+
+    try:
+        m1 = slope(line1[0], line1[1])
+    except ZeroDivisionError:
+        m1 = big_value
+        
     b1 = y_intercept(m1, line1[0])
 
-    m2 = slope(line2[0], line2[1])
+    try:
+        m2 = slope(line2[0], line2[1])
+    except ZeroDivisionError:
+        m2 = big_value
+        
     b2 = y_intercept(m2, line2[0])
 
     if abs(m1 - m2) < min_allowed:
@@ -243,7 +252,7 @@ def menu():
 # Game Loop ------------------------------------------------------- #
 def game():
     drone = Drone((50, 50))
-    obstacles = [Obstacle([(50,50), (70,100), (120,70), (130,50)]),
+    obstacles = [Obstacle([(50,50), (50,100), (120,70), (130,50)]),
                  Obstacle([(100,130), (120,160), (130,150)])]
 
     line_of_sight = False
