@@ -31,6 +31,7 @@ class Drone():
         self.r = 10
         self.color = (180, 180, 200)
         self.vel = 3
+        self.charging = False
 
     def move(self):
         keys = pygame.key.get_pressed()
@@ -65,8 +66,8 @@ class Line():
 
 # Intersect Stuff ------------------------------------------------- #
 def slope(p1, p2):
-    print(p2[0], p1[0])
     return (p2[1] - p1[1])*1. / (p2[0] - p1[0]) # y = mx + b | m := slope
+    # ZeroDivisionError Bug - what if lines are vertical/horizontal
    
 def y_intercept(slope, p1):
     return p1[1] - 1.*slope * p1[0] # y = mx+b -> b = y-mb | b:= y_intercept
@@ -109,6 +110,22 @@ def segment_intersect(line1, line2):
     return intersection_pt
 
 
+
+
+def play_music(music, pos=0, vol=0.5):
+    pygame.mixer.music.set_volume(vol)
+    pygame.mixer.music.fadeout(1000)
+    #pygame.mixer.music.set_pos(pos)
+    pygame.mixer.music.load(f'assets\{music}')
+    pygame.mixer.music.play(-1, pos)
+
+def stop_music(stop=False):
+    if stop:
+        pygame.mixer.music.stop()
+    pygame.mixer.music.fadeout(300)
+    
+    
+
 # Update Game Window ---------------------------------------------- #
 def update_window(drone, obstacle):
     '''
@@ -139,7 +156,8 @@ def menu():
                         PLAY_BUTTON_UP.get_width(),
                         PLAY_BUTTON_UP.get_height())
     
-    while True:
+    run = True
+    while run:
         WINDOW.blit(TITLE_IMG, (0,0))
         WINDOW.blit(MENU_LABEL, (100, int(HEIGHT*.1)))
         PLAY_BUTTON_DOWN.set_colorkey((255, 255, 255))
@@ -164,20 +182,34 @@ def menu():
                 
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
-                            game()
+                        run = False
+                            
             else:                
                 WINDOW.blit(PLAY_BUTTON_UP, (PLAY_BUTTON_RECT[0], PLAY_BUTTON_RECT[1]))
                         
             pygame.display.update()
-    
+
+    game()
 
 
 # Game Loop ------------------------------------------------------- #
 def game():
     drone = Drone((50, 50))
     obstacle = Line((100,60), (130, 210))
+
     
-    while True:
+    
+    run = True
+    while run:
+        
+        intersection_pt = segment_intersect((obstacle.start, obstacle.end), (drone.pos, CENTER))
+        if not intersection_pt and not drone.charging:
+            drone.charging = True
+            play_music('wummern.mp3')
+        elif intersection_pt:
+            stop_music()
+            drone.charging = False
+            
         # Buttons n stuff
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -186,7 +218,7 @@ def game():
 
             if event.type == pygame.KEYDOWN: # event has no key attribute
                 if event.key == pygame.K_ESCAPE:
-                    menu()
+                    run = False
 
         # Do Stuff 
         drone.move()
@@ -196,7 +228,8 @@ def game():
         main_clock.tick(FPS)
 
     
-menu()
+while True:
+    menu()
 
 # Close Pygame ------------------------------------------------ #
 pygame.quit()
