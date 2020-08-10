@@ -61,6 +61,14 @@ class Line():
     def draw(self):
         pygame.draw.line(WINDOW, self.color, self.start, self.end)
 
+class Obstacle():
+    def __init__(self, points):
+        self.points = points
+        self.color = (200, 130, 70)
+
+    def draw(self):
+        pygame.draw.aalines(WINDOW, self.color, True, self.points)
+
 
 
 # Intersect Stuff ------------------------------------------------- #
@@ -137,7 +145,7 @@ def update_window(drone, obstacle):
     drone.draw()
     obstacle.draw()
 
-    intersection_pt = segment_intersect((obstacle.start, obstacle.end), (drone.pos, CENTER))
+    intersection_pt = segment_intersect((obstacle.points[0], obstacle.points[1]), (drone.pos, CENTER))
 
     if intersection_pt:
         pygame.draw.line(WINDOW, (220, 130, 80), drone.pos, CENTER)
@@ -193,15 +201,19 @@ def menu():
 # Game Loop ------------------------------------------------------- #
 def game():
     drone = Drone((50, 50))
+<<<<<<< Updated upstream
     obstacle = Line((random.randint(0, WIDTH), random.randint(0, HEIGHT)),
                     (random.randint(0, WIDTH), random.randint(0, HEIGHT)))
+=======
+    obstacle = Obstacle([(100, 50), (40, 60), (320, 200)])
+>>>>>>> Stashed changes
 
     
     
     run = True
     while run:
         
-        intersection_pt = segment_intersect((obstacle.start, obstacle.end), (drone.pos, CENTER))
+        intersection_pt = segment_intersect((obstacle.points[0], obstacle.points[1]), (drone.pos, CENTER))
         if not intersection_pt and not drone.charging:
             drone.charging = True
             drone.not_charging = False
@@ -211,7 +223,10 @@ def game():
             drone.charging = False
             drone.not_charging = True
             play_music('idle_wummern.mp3')
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
             
         # Buttons n stuff
         for event in pygame.event.get():
