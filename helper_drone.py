@@ -15,7 +15,10 @@ main_clock = pygame.time.Clock()
 WINDOW = pygame.display.set_mode(SIZE)
 pygame.display.set_caption('Helper Drone')
 
-TITLE_IMG = pygame.image.load('assets\HD_title.png')
+TITLE_IMG = pygame.image.load('assets\HD_title.png').convert()
+CAMPAIGN_IMG = pygame.image.load('assets\campaign.png').convert()
+LEVEL_CURSOR_ACTIVE_IMG = pygame.image.load('assets\level_active.png').convert()
+LEVEL_CURSOR_INACTIVE_IMG = pygame.image.load('assets\level_inactive.png').convert()
 PLAY_BUTTON_UP = pygame.image.load(os.path.join('assets', 'HD_title_play_up.png')).convert()
 PLAY_BUTTON_DOWN = pygame.image.load(os.path.join('assets', 'HD_title_play_down.png')).convert()
 
@@ -86,9 +89,45 @@ class Obstacle():
 
 
 
+class Button():
+    def __init__(self, window, x, y, img_active, img_inactive, action, level_list=None):
+        self.window = window
+        self.x = x
+        self.y = y
+        self.width = img_active.get_width()
+        self.height = img_active.get_height()
+        self.img_active = img_active
+        self.img_inactive = img_inactive
+        self.action = action
+        self.args = level_list
+
+    def check_status(self):
+        mouse = pygame.mouse.get_pos()
+        
+        if self.x <= mouse[0] <= self.x + self.width\
+           and self.y <= mouse[1] <= self.y + self.height:
+            self.img_active.set_colorkey((255, 255, 255))
+            self.window.blit(self.img_active, (self.x, self.y))
+            
+            if pygame.mouse.get_pressed()[0] == 1:
+                if self.args:
+                    self.action(self.args)
+                else:
+                    self.action()
+                return False
+                    
+        else:
+            self.img_inactive.set_colorkey((255, 255, 255))
+            self.window.blit(self.img_inactive, (self.x, self.y))
+
+        return True
 
 
+def close_all():
+    pygame.quit()
+    sys.exit()
 
+    
 # Intersection Stuff ---------------------------------------------- #
 def get_slope(p1, p2):
     return (p2[1] - p1[1])*1. / (p2[0] - p1[0]) # y = mx + b | m := slope
@@ -229,21 +268,85 @@ def update_window(drone, obstacles, intersection_pt):
 
     
 
+# Title Screen ------------------------------------------------------- #
+def title():
+    print('title')
+    button = Button(WINDOW,
+                    (WIDTH - PLAY_BUTTON_UP.get_width())//2,
+                    int(HEIGHT*.7),
+                    PLAY_BUTTON_DOWN,
+                    PLAY_BUTTON_UP,
+                    menu)
+
+    run = True
+    while run:
+        WINDOW.blit(TITLE_IMG, (0,0))
+        WINDOW.blit(MENU_LABEL, (100, int(HEIGHT*.1)))
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+                
+            
+        button.check_status()
+        pygame.display.update()
+
+    
+
 # Main Menu ------------------------------------------------------- #
 def menu():
-    PLAY_BUTTON_RECT = ((WIDTH-PLAY_BUTTON_UP.get_width())//2,
-                        int(HEIGHT*.7),
-                        PLAY_BUTTON_UP.get_width(),
-                        PLAY_BUTTON_UP.get_height())
+    print('menu')
+    buttons = [
+        Button(WINDOW,
+               100,
+               int(HEIGHT*.3),
+               PLAY_BUTTON_DOWN,
+               PLAY_BUTTON_UP,
+               campaign),
+        Button(WINDOW,
+               100,
+               int(HEIGHT*.6),
+               PLAY_BUTTON_DOWN,
+               PLAY_BUTTON_UP,
+               close_all,
+               )
+        ]
 
+
+    run = True
+    while run:
+        WINDOW.blit(TITLE_IMG, (0,0))
+        WINDOW.blit(MENU_LABEL, (100, int(HEIGHT*.1)))
+
+        
+        for button in buttons:
+            button.check_status()
+
+        pygame.display.update()
+
+        # Events n stuff
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                close_all()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    run = False
+                    #stop_music(fadeout=True)
+
+
+# Level Menu ------------------------------------------------------- #
+def campaign():
+    print('campaign')
     LEVEL_DICT = {
         1: [Drone((50, 50)),
             []
         ],
         2: [Drone((50, 50)),
             [
-            Obstacle([(50,50), (50,100), (120,70), (130,50)]),
-            Obstacle([(100,130), (120,160), (130,150)])
+                Obstacle([(50,50), (50,100), (120,70), (130,50)]),
+                Obstacle([(100,130), (120,160), (130,150)])
             ]
         ],
         3: [Drone((50, 50)),
@@ -254,52 +357,81 @@ def menu():
             ]
         ]             
     }
+
+    buttons = [
+        Button(WINDOW,
+               80,
+               210,
+               LEVEL_CURSOR_ACTIVE_IMG,
+               LEVEL_CURSOR_INACTIVE_IMG,
+               level,
+               LEVEL_DICT[1]),
+        Button(WINDOW,
+               250,
+               110,
+               LEVEL_CURSOR_ACTIVE_IMG,
+               LEVEL_CURSOR_INACTIVE_IMG,
+               level,
+               LEVEL_DICT[2]),
+        Button(WINDOW,
+               330,
+               270,
+               LEVEL_CURSOR_ACTIVE_IMG,
+               LEVEL_CURSOR_INACTIVE_IMG,
+               level,
+               LEVEL_DICT[3]),
+        Button(WINDOW,
+               475,
+               200,
+               LEVEL_CURSOR_ACTIVE_IMG,
+               LEVEL_CURSOR_INACTIVE_IMG,
+               level,
+               LEVEL_DICT[3])
+        ]
+
+
     
+        
     run = True
     while run:
-        WINDOW.blit(TITLE_IMG, (0,0))
-        WINDOW.blit(MENU_LABEL, (100, int(HEIGHT*.1)))
-        PLAY_BUTTON_DOWN.set_colorkey((255, 255, 255))
-        PLAY_BUTTON_UP.set_colorkey((255, 255, 255))
-        
-        pos = pygame.mouse.get_pos()
-        
+        WINDOW.blit(CAMPAIGN_IMG, (0,0))
+
+        for button in buttons:
+            run = button.check_status()
+            if not run:
+                print('died?', run)
+                #**********************
+                # *** stays in loop ***
+                #**********************
+
+        # Events n stuff
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+                close_all()
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    pygame.quit()
-                    sys.exit()
+                    run = False
+                    #stop_music(fadeout=True)
 
-            
-            if PLAY_BUTTON_RECT[0] <= pos[0] <= PLAY_BUTTON_RECT[0] + PLAY_BUTTON_RECT[2]\
-               and PLAY_BUTTON_RECT[1] <= pos[1] <= PLAY_BUTTON_RECT[1] + PLAY_BUTTON_RECT[3]:
-                WINDOW.blit(PLAY_BUTTON_DOWN, (PLAY_BUTTON_RECT[0], PLAY_BUTTON_RECT[1]))
-                
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        run = False
-                            
-            else:                
-                WINDOW.blit(PLAY_BUTTON_UP, (PLAY_BUTTON_RECT[0], PLAY_BUTTON_RECT[1]))
-                        
-            pygame.display.update()
+        pygame.display.update()
 
-    game(LEVEL_DICT)
+
+# Level Menu ------------------------------------------------------- #
+def level(level_objects):
+    print('level_script')
+    # intro()
+    game(level_objects)
+    # outro()
+    pass
 
 
 # Game Loop ------------------------------------------------------- #
-def game(LEVEL_DICT, level=1):
-    print(level)
+def game(level_objects):
+    print('game_level')
 
-    if level in LEVEL_DICT:
-        drone = LEVEL_DICT[level][0]
-        obstacles = LEVEL_DICT[level][1]
-    else:
-        return None #end game loop
+    drone = level_objects[0]
+    obstacles = level_objects[1]
 
     run = True
     while run:
@@ -308,8 +440,7 @@ def game(LEVEL_DICT, level=1):
         # Events n stuff
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+                close_all()
 
             if event.type == pygame.KEYDOWN: # event has no key attribute
                 if event.key == pygame.K_ESCAPE:
@@ -332,21 +463,10 @@ def game(LEVEL_DICT, level=1):
 
         # Alive?
         if not alive:
-            level += 1
             run = False
             stop_music(fadeout=True)
             
 
-    if not alive:
-        #interlevel loop
-        game(LEVEL_DICT, level)
-        
-        
-
     
 while True:
-    menu()
-
-# Close Pygame ------------------------------------------------ #
-pygame.quit()
-sys.exit()
+    title()
