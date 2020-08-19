@@ -15,15 +15,22 @@ main_clock = pygame.time.Clock()
 WINDOW = pygame.display.set_mode(SIZE)
 pygame.display.set_caption('Helper Drone')
 
-TITLE_IMG = pygame.image.load('assets', 'title2.png').convert()
+TITLE_IMG = pygame.image.load(r'assets\title_green.png').convert()
+MENU_IMG = pygame.image.load(r'assets\title2.png').convert()
 CAMPAIGN_IMG = pygame.image.load('assets\campaign.png').convert()
 LEVEL_CURSOR_ACTIVE_IMG = pygame.image.load('assets\level_active.png').convert()
 LEVEL_CURSOR_INACTIVE_IMG = pygame.image.load('assets\level_inactive.png').convert()
-PLAY_BUTTON_UP = pygame.image.load(os.path.join('assets', 'HD_title_play_up.png')).convert()
-PLAY_BUTTON_DOWN = pygame.image.load(os.path.join('assets', 'HD_title_play_down.png')).convert()
 
-MENU_FONT = pygame.font.SysFont('Matura MT Script Capitals', 60, 1)
-MENU_LABEL = MENU_FONT.render('Helper Drone v1', False, (20, 20, 20))
+START_BUTTON = pygame.image.load(os.path.join('assets', 'start_button.png')).convert()
+START_BUTTON_ACTIVE = pygame.image.load(os.path.join('assets', 'start_button_active.png')).convert()
+QUIT_BUTTON = pygame.image.load(os.path.join('assets', 'quit_button.png')).convert()
+QUIT_BUTTON_ACTIVE = pygame.image.load(os.path.join('assets', 'quit_button_active.png')).convert()
+CAMPAIGN_BUTTON = pygame.image.load(os.path.join('assets', 'campaign_button.png')).convert()
+CAMPAIGN_BUTTON_ACTIVE = pygame.image.load(os.path.join('assets', 'campaign_button_active.png')).convert()
+
+
+#MENU_FONT = pygame.font.SysFont('Matura MT Script Capitals', 60, 1)
+#MENU_LABEL = MENU_FONT.render('Helper Drone v1', False, (20, 20, 20))
 
 
 class Drone():
@@ -106,7 +113,7 @@ class Button():
         
         if self.x <= mouse[0] <= self.x + self.width\
            and self.y <= mouse[1] <= self.y + self.height:
-            self.img_active.set_colorkey((255, 255, 255))
+            self.img_active.set_colorkey((255,255,255))
             self.window.blit(self.img_active, (self.x, self.y))
             
             if pygame.mouse.get_pressed()[0] == 1:
@@ -117,7 +124,7 @@ class Button():
                 return False
                     
         else:
-            self.img_inactive.set_colorkey((255, 255, 255))
+            self.img_inactive.set_colorkey((255,255,255))
             self.window.blit(self.img_inactive, (self.x, self.y))
 
         return True
@@ -272,16 +279,15 @@ def update_window(drone, obstacles, intersection_pt):
 def title():
     print('title')
     button = Button(WINDOW,
-                    (WIDTH - PLAY_BUTTON_UP.get_width())//2,
+                    (WIDTH - START_BUTTON.get_width())//2,
                     int(HEIGHT*.7),
-                    PLAY_BUTTON_DOWN,
-                    PLAY_BUTTON_UP,
+                    START_BUTTON_ACTIVE,
+                    START_BUTTON,
                     menu)
 
     run = True
     while run:
         WINDOW.blit(TITLE_IMG, (0,0))
-        WINDOW.blit(MENU_LABEL, (100, int(HEIGHT*.1)))
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -301,14 +307,14 @@ def menu():
         Button(WINDOW,
                100,
                int(HEIGHT*.3),
-               PLAY_BUTTON_DOWN,
-               PLAY_BUTTON_UP,
+               CAMPAIGN_BUTTON_ACTIVE,
+               CAMPAIGN_BUTTON,
                campaign),
         Button(WINDOW,
                100,
                int(HEIGHT*.6),
-               PLAY_BUTTON_DOWN,
-               PLAY_BUTTON_UP,
+               QUIT_BUTTON_ACTIVE,
+               QUIT_BUTTON,
                close_all,
                )
         ]
@@ -316,8 +322,7 @@ def menu():
 
     run = True
     while run:
-        WINDOW.blit(TITLE_IMG, (0,0))
-        WINDOW.blit(MENU_LABEL, (100, int(HEIGHT*.1)))
+        WINDOW.blit(MENU_IMG, (0,0))
 
         
         for button in buttons:
@@ -339,24 +344,6 @@ def menu():
 # Level Menu ------------------------------------------------------- #
 def campaign():
     print('campaign')
-    LEVEL_DICT = {
-        1: [Drone((50, 50)),
-            []
-        ],
-        2: [Drone((50, 50)),
-            [
-                Obstacle([(50,50), (50,100), (120,70), (130,50)]),
-                Obstacle([(100,130), (120,160), (130,150)])
-            ]
-        ],
-        3: [Drone((50, 50)),
-            [
-                Obstacle([(50,50), (50,100), (120,70), (130,50)]),
-                Obstacle([(100,130), (120,160), (130,150)]),
-                Obstacle([(400,230), (500,250), (520, 200), (480, 180), (430, 200)])
-            ]
-        ]             
-    }
 
     buttons = [
         Button(WINDOW,
@@ -365,44 +352,37 @@ def campaign():
                LEVEL_CURSOR_ACTIVE_IMG,
                LEVEL_CURSOR_INACTIVE_IMG,
                level,
-               LEVEL_DICT[1]),
+               1),
         Button(WINDOW,
                250,
                110,
                LEVEL_CURSOR_ACTIVE_IMG,
                LEVEL_CURSOR_INACTIVE_IMG,
                level,
-               LEVEL_DICT[2]),
+               2),
         Button(WINDOW,
                330,
                270,
                LEVEL_CURSOR_ACTIVE_IMG,
                LEVEL_CURSOR_INACTIVE_IMG,
                level,
-               LEVEL_DICT[3]),
+               3),
         Button(WINDOW,
                475,
                200,
                LEVEL_CURSOR_ACTIVE_IMG,
                LEVEL_CURSOR_INACTIVE_IMG,
                level,
-               LEVEL_DICT[3])
+               3)
         ]
 
-
     
-        
     run = True
     while run:
         WINDOW.blit(CAMPAIGN_IMG, (0,0))
 
         for button in buttons:
-            run = button.check_status()
-            if not run:
-                print('died?', run)
-                #**********************
-                # *** stays in loop ***
-                #**********************
+            button.check_status()
 
         # Events n stuff
         for event in pygame.event.get():
@@ -415,13 +395,33 @@ def campaign():
                     #stop_music(fadeout=True)
 
         pygame.display.update()
-
+        
 
 # Level Menu ------------------------------------------------------- #
-def level(level_objects):
+def level(level):
     print('level_script')
+
+    LEVEL_DICT = {
+        1: [Drone((50, 50)),
+            []
+        ],
+        2: [Drone((50, 50)),
+            [
+                Obstacle([(50,50), (40,100), (120,70), (130,50)]),
+                Obstacle([(100,130), (120,160), (130,150)])
+            ]
+        ],
+        3: [Drone((50, 50)),
+            [
+                Obstacle([(50,50), (40,100), (120,70), (130,50)]),
+                Obstacle([(100,130), (120,160), (130,150)]),
+                Obstacle([(400,230), (500,250), (520, 200), (480, 180), (430, 200)])
+            ]
+        ]             
+    }
+    
     # intro()
-    game(level_objects)
+    game(LEVEL_DICT[level])
     # outro()
     pass
 
