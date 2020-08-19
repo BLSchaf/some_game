@@ -1,2 +1,25 @@
-a game where the game plays the player
-first person farming rpg
+repair drone mit helfer syndrone :v
+helfer synch drone (synch dronen synchronisieren bei lne of sight)
+
+repaired automatisch wenn in line of sight
+verliert dadurch aber selbst energie
+line of sight brechen um zu überleben und energie einsammeln
+greedy hole in der mitte (black hole) oder so, was repariert wird
+
+entweder greedy hole am leben erhalten oder komplett heilen
+vll erstes lvl am leben erhalten, aber zu schwer das man stirbt und eingesaugt wird
+
+bisschen mit story verbinden
+im greedy hole dann paar lvl in denen man lernt sich selbst zu schützen
+erstmal line of sight brechn als feature
+dash um out of sight zu laufen
+dann vll helferstrahl schwächen (permanent?)
+dann kurze zeit komplett aussetzen
+...
+
+wenn man es ne bestimmte zeit nich mehr repariert, repariert es von selbst???
+
+visuell wirkt es so als sei das ziel das greedy hole zu reparieren
+aber eigene kleine lebensanzeige ist eigl das wichtige?
+
+am ende is greedy hole und die helfer syndrone repariert :v
