@@ -15,12 +15,12 @@ main_clock = pygame.time.Clock()
 WINDOW = pygame.display.set_mode(SIZE)
 pygame.display.set_caption('Helper Drone')
 
-TITLE_IMG = pygame.image.load('assets\HD_title.png')
+TITLE_IMG = pygame.image.load(os.path.join('assets', 'title2.png')).convert()
 PLAY_BUTTON_UP = pygame.image.load(os.path.join('assets', 'HD_title_play_up.png')).convert()
 PLAY_BUTTON_DOWN = pygame.image.load(os.path.join('assets', 'HD_title_play_down.png')).convert()
 
-MENU_FONT = pygame.font.SysFont('Matura MT Script Capitals', 60, 1)
-MENU_LABEL = MENU_FONT.render('Helper Drone v1', False, (20, 20, 20))
+#MENU_FONT = pygame.font.SysFont('Matura MT Script Capitals', 60, 1)
+#MENU_LABEL = MENU_FONT.render('Helper Drone v1', False, (20, 20, 20))
 
 
 class Drone():
@@ -258,7 +258,7 @@ def menu():
     run = True
     while run:
         WINDOW.blit(TITLE_IMG, (0,0))
-        WINDOW.blit(MENU_LABEL, (100, int(HEIGHT*.1)))
+        #WINDOW.blit(MENU_LABEL, (100, int(HEIGHT*.1)))
         PLAY_BUTTON_DOWN.set_colorkey((255, 255, 255))
         PLAY_BUTTON_UP.set_colorkey((255, 255, 255))
         
