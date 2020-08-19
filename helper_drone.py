@@ -12,12 +12,29 @@ main_clock = pygame.time.Clock()
 WINDOW = pygame.display.set_mode(SIZE)
 pygame.display.set_caption('Helper Drone')
 
+<<<<<<< Updated upstream
 TITLE_IMG = pygame.image.load('assets\HD_title.png')
 PLAY_BUTTON_UP = pygame.image.load(os.path.join('assets', 'HD_title_play_up.png')).convert()
 PLAY_BUTTON_DOWN = pygame.image.load(os.path.join('assets', 'HD_title_play_down.png')).convert()
+=======
+TITLE_IMG = pygame.image.load(os.path.join('assets', 'title2.png')).convert()
+MENU_IMG = pygame.image.load(os.path.join('assets', 'menu.png')).convert()
 
-MENU_FONT = pygame.font.SysFont('Matura MT Script Capitals', 60, 1)
-MENU_LABEL = MENU_FONT.render('Helper Drone v1', False, (20, 20, 20))
+CAMPAIGN_IMG = pygame.image.load('assets\campaign.png').convert()
+LEVEL_CURSOR_ACTIVE_IMG = pygame.image.load('assets\level_active.png').convert()
+LEVEL_CURSOR_INACTIVE_IMG = pygame.image.load('assets\level_inactive.png').convert()
+PLAY_BUTTON_UP = pygame.image.load(os.path.join('assets', 'start_blau.png')).convert()
+PLAY_BUTTON_DOWN = pygame.image.load(os.path.join('assets', 'start_rot.png')).convert()
+
+QUIT_BUTTON_UP = pygame.image.load(os.path.join('assets', 'quit_blau.png')).convert()
+QUIT_BUTTON_DOWN = pygame.image.load(os.path.join('assets', 'quit_rot.png')).convert()
+>>>>>>> Stashed changes
+
+CAMPAIGN_BUTTON_UP = pygame.image.load(os.path.join('assets', 'campaign_blau.png')).convert()
+CAMPAIGN_BUTTON_DOWN = pygame.image.load(os.path.join('assets', 'campaign_rot.png')).convert()
+
+#MENU_FONT = pygame.font.SysFont('Matura MT Script Capitals', 60, 1)
+#MENU_LABEL = MENU_FONT.render('Helper Drone v1', False, (20, 20, 20))
 
 
 
@@ -155,6 +172,7 @@ def update_window(drone, obstacle):
     
     pygame.display.update()
 
+<<<<<<< Updated upstream
 # Main Menu ------------------------------------------------------- #
 def menu():
     PLAY_BUTTON_RECT = ((WIDTH-PLAY_BUTTON_UP.get_width())//2,
@@ -168,6 +186,61 @@ def menu():
         WINDOW.blit(MENU_LABEL, (100, int(HEIGHT*.1)))
         PLAY_BUTTON_DOWN.set_colorkey((255, 255, 255))
         PLAY_BUTTON_UP.set_colorkey((255, 255, 255))
+=======
+    
+
+# Title Screen ------------------------------------------------------- #
+def title():
+    print('title')
+    button = Button(WINDOW,
+                    (WIDTH - PLAY_BUTTON_UP.get_width())//2,
+                    int(HEIGHT*.7),
+                    PLAY_BUTTON_DOWN,
+                    PLAY_BUTTON_UP,
+                    menu)
+
+    run = True
+    while run:
+        WINDOW.blit(TITLE_IMG, (0,0))
+        #WINDOW.blit(MENU_LABEL, (100, int(HEIGHT*.1)))
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+                
+            
+        button.check_status()
+        pygame.display.update()
+
+    
+
+# Main Menu ------------------------------------------------------- #
+def menu():
+    print('menu')
+    buttons = [
+        Button(WINDOW,
+               100,
+               int(HEIGHT*.3),
+               CAMPAIGN_BUTTON_DOWN,
+               CAMPAIGN_BUTTON_UP,
+               campaign),
+        Button(WINDOW,
+               100,
+               int(HEIGHT*.6),
+               QUIT_BUTTON_DOWN,
+               QUIT_BUTTON_UP,
+               close_all,
+               )
+        ]
+
+
+    run = True
+    while run:
+        WINDOW.blit(MENU_IMG, (0,0))
+        #WINDOW.blit(MENU_LABEL, (100, int(HEIGHT*.1)))
+
+>>>>>>> Stashed changes
         
         pos = pygame.mouse.get_pos()
         
