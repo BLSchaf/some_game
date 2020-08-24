@@ -16,7 +16,7 @@ WINDOW = pygame.display.set_mode(SIZE)
 pygame.display.set_caption('Helper Drone')
 
 TITLE_IMG = pygame.image.load(r'assets\title_green.png').convert()
-MENU_IMG = pygame.image.load(r'assets\title2.png').convert()
+MENU_IMG = pygame.image.load(r'assets\menu.png').convert()
 CAMPAIGN_IMG = pygame.image.load('assets\campaign.png').convert()
 LEVEL_CURSOR_ACTIVE_IMG = pygame.image.load('assets\level_active.png').convert()
 LEVEL_CURSOR_INACTIVE_IMG = pygame.image.load('assets\level_inactive.png').convert()
@@ -206,17 +206,17 @@ def update_interaction(intersection_pt, drone):
     if not intersection_pt and not drone.charging:
         drone.charging = True
         drone.not_charging = False
-        play_music('wummern.mp3')
+        play_music('futuristic_sound.mp3')
         
     elif intersection_pt and not drone.not_charging:
         drone.not_charging = True
         drone.charging = False
-        play_music('idle_wummern.mp3')
+        play_music('squeezy_charge.mp3')
 
     return True
 
 
-def check_intersection(obstacles, drone):
+def check_intersection(obstacles, drone):   
     for obstacle in obstacles:
             for i in range(len(obstacle)):
                 intersection_pt = get_intersection((obstacle.points[i],
