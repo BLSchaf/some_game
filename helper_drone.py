@@ -13,6 +13,7 @@ WINDOW = pygame.display.set_mode(SIZE)
 pygame.display.set_caption('Helper Drone')
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 TITLE_IMG = pygame.image.load('assets\HD_title.png')
 PLAY_BUTTON_UP = pygame.image.load(os.path.join('assets', 'HD_title_play_up.png')).convert()
 PLAY_BUTTON_DOWN = pygame.image.load(os.path.join('assets', 'HD_title_play_down.png')).convert()
@@ -20,6 +21,10 @@ PLAY_BUTTON_DOWN = pygame.image.load(os.path.join('assets', 'HD_title_play_down.
 TITLE_IMG = pygame.image.load(os.path.join('assets', 'title2.png')).convert()
 MENU_IMG = pygame.image.load(os.path.join('assets', 'menu.png')).convert()
 
+=======
+TITLE_IMG = pygame.image.load(r'assets\title_green.png').convert()
+MENU_IMG = pygame.image.load(r'assets\menu.png').convert()
+>>>>>>> Stashed changes
 CAMPAIGN_IMG = pygame.image.load('assets\campaign.png').convert()
 LEVEL_CURSOR_ACTIVE_IMG = pygame.image.load('assets\level_active.png').convert()
 LEVEL_CURSOR_INACTIVE_IMG = pygame.image.load('assets\level_inactive.png').convert()
@@ -39,15 +44,20 @@ CAMPAIGN_BUTTON_DOWN = pygame.image.load(os.path.join('assets', 'campaign_rot.pn
 
 
 class Drone():
-    def __init__(self, pos):
+    def __init__(self, pos, life = 100):
         self.pos = pos
         self.x = pos[0]
         self.y = pos[1]
         self.r = 10
-        self.color = (180, 180, 200)
+        self.color = (220, 220, 220)
         self.vel = 3
         self.charging = False
         self.not_charging = False
+<<<<<<< Updated upstream
+=======
+        self.life = life
+        
+>>>>>>> Stashed changes
 
     def move(self):
         keys = pygame.key.get_pressed()
@@ -81,11 +91,29 @@ class Line():
 class Obstacle():
     def __init__(self, points):
         self.points = points
+<<<<<<< Updated upstream
         self.color = (200, 130, 70)
 
     def draw(self):
         pygame.draw.aalines(WINDOW, self.color, True, self.points)
 
+=======
+        self.color = (220, 130, 80)
+        self.x_vel = random.randint(-10,10)/10
+        self.y_vel = random.randint(-10,10)/10
+
+    def __len__(self):
+        return len(self.points)
+
+    def move(self):
+        self.x_vel *= random.randint(90,110) / 100
+        self.y_vel *= random.randint(90,110) / 100
+        self.points = [(i + self.x_vel, j + self.y_vel) for i, j in self.points]
+        self.points_int = [list(map(int, point)) for point in self.points]
+
+    def draw(self):
+        pygame.draw.polygon(WINDOW, self.color, self.points_int)
+>>>>>>> Stashed changes
 
 
 # Intersect Stuff ------------------------------------------------- #
@@ -134,6 +162,46 @@ def segment_intersect(line1, line2):
     return intersection_pt
 
 
+<<<<<<< Updated upstream
+=======
+def check_intersection(obstacles, drone):
+    for obstacle in obstacles:
+            for i in range(len(obstacle)):
+                intersection_pt = get_intersection((obstacle.points[i],
+                                                    obstacle.points[(i+1)%(len(obstacle))]),
+                                                   (drone.pos, CENTER))
+                
+                if intersection_pt:
+                    return intersection_pt
+                
+    return None
+
+
+def update_interaction(intersection_pt, drone, center):
+    drone.color = (min(2.5* drone.life, 255)/2, 0, min(0.5* drone.life, 255)/2)
+    if not intersection_pt:
+        if drone.life >= 0.1:
+            drone.life -= 0.1
+            center.life += 0.1
+            
+    else:
+        if drone.life <= 99.9:
+            drone.life += 0.1
+    
+    if not intersection_pt and not drone.charging:
+        drone.charging = True
+        drone.not_charging = False
+        play_music('wummern.ogg')
+        
+    elif intersection_pt and not drone.not_charging:
+        drone.not_charging = True
+        drone.charging = False
+        play_music('idle_wummern.ogg')
+        
+
+
+
+>>>>>>> Stashed changes
 
 
 def play_music(music, pos=0, vol=0.05):
@@ -150,7 +218,11 @@ def stop_music(stop=False):
     
 
 # Update Game Window ---------------------------------------------- #
+<<<<<<< Updated upstream
 def update_window(drone, obstacle):
+=======
+def update_window(drone, obstacles, intersection_pt, center):
+>>>>>>> Stashed changes
     '''
     Updates the window
     drone: Drone instance
@@ -158,7 +230,17 @@ def update_window(drone, obstacle):
     '''
     WINDOW.fill((50, 50, 50))
     
+<<<<<<< Updated upstream
     pygame.draw.circle(WINDOW, (220, 220, 220), CENTER, 30)
+=======
+    pygame.draw.circle(WINDOW, (220, 220, 220), CENTER, 30, 5)
+    pygame.draw.circle(WINDOW, (0, min(8.5 * center.life, 255), 0), CENTER, int(center.life))
+
+    #drone life
+    pygame.draw.rect(WINDOW, (80,80,80), (WIDTH - 122, 18, 104, 24))
+    pygame.draw.rect(WINDOW, (220, 220, 220), (WIDTH - 120, 20, int(drone.life), 20))
+    
+>>>>>>> Stashed changes
     drone.draw()
     obstacle.draw()
 
@@ -268,6 +350,7 @@ def menu():
                         
             pygame.display.update()
 
+<<<<<<< Updated upstream
     game()
 
 
@@ -280,10 +363,55 @@ def game():
 =======
     obstacle = Obstacle([(100, 50), (40, 60), (320, 200)])
 >>>>>>> Stashed changes
+=======
+# Level Menu ------------------------------------------------------- #
+def level(level):
+    print('level_script')
+
+    LEVEL_DICT = {
+        1: [Drone((50, 50)),
+            []
+        ],
+        2: [Drone((50, 50)),
+            [
+                Obstacle([(50,50), (40,100), (120,70), (130,50)]),
+                Obstacle([(100,130), (120,160), (130,150)])
+            ]
+        ],
+        3: [Drone((50, 50)),
+            [
+                Obstacle([(50,50), (40,100), (120,70), (130,50)]),
+                Obstacle([(100,130), (120,160), (130,150)]),
+                Obstacle([(400,230), (500,250), (520, 200), (480, 180), (430, 200)])
+            ]
+        ]             
+    }
+    
+    # intro()
+    win = game(LEVEL_DICT[level])
+    if win:
+        # win outro()
+        pass
+    else:
+        # lose outro()
+        pass
+    pass
+
+
+# Game Loop ------------------------------------------------------- #
+def game(level_objects):
+    print('game_level')
+
+    drone = level_objects[0]
+    obstacles = level_objects[1]
+    center = Drone(CENTER, 5)
+>>>>>>> Stashed changes
 
     
     
     run = True
+    win = False
+    
     while run:
         
         intersection_pt = segment_intersect((obstacle.points[0], obstacle.points[1]), (drone.pos, CENTER))
@@ -311,12 +439,36 @@ def game():
                 if event.key == pygame.K_ESCAPE:
                     run = False
 
+<<<<<<< Updated upstream
+=======
+        intersection_pt = check_intersection(obstacles, drone)
+        update_interaction(intersection_pt, drone, center)
+        print(drone.life, center.life, drone.color)
+        
+        if drone.life <= 0.1:
+            run = False
+            win = False
+
+        if center.life >= 30:
+            run = False
+            win = True
+
+>>>>>>> Stashed changes
         # Do Stuff 
         drone.move()
 
         # Update window
+<<<<<<< Updated upstream
         update_window(drone, obstacle)
         main_clock.tick(FPS)
+=======
+        update_window(drone, obstacles, intersection_pt, center)
+
+    stop_music(fadeout=True)
+    if win:
+        print('win')
+            
+>>>>>>> Stashed changes
 
     
 while True:
