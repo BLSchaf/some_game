@@ -2,6 +2,7 @@ import pygame
 import sys
 import os
 import random
+import math
 
 
 # Setup Window ------------------------------------------------ #
@@ -32,35 +33,54 @@ CAMPAIGN_BUTTON_ACTIVE = pygame.image.load(os.path.join('assets', 'campaign_butt
 #MENU_FONT = pygame.font.SysFont('Matura MT Script Capitals', 60, 1)
 #MENU_LABEL = MENU_FONT.render('Helper Drone v1', False, (20, 20, 20))
 
+dt = 1 / FPS # to simulate one second for the formula
 
 class Drone():
-    def __init__(self, pos):
+    def __init__(self, pos, life = 10):
         self.pos = pos
         self.x = pos[0]
         self.y = pos[1]
         self.r = 10
         self.color = (180, 180, 200)
-        self.vel = 3
+        self.vel = [0,0]
+        self.acc = 5
         self.charging = False
         self.not_charging = False
-        self.life = 10
+        self.life = life
         
 
     def move(self):
         keys = pygame.key.get_pressed()
+        
         if keys[pygame.K_w] == 1:
-            self.y -= self.vel
-        if keys[pygame.K_s] == 1:
-            self.y += self.vel
+            self.vel[1] -= self.acc * dt
+        elif keys[pygame.K_s] == 1:
+            self.vel[1] += self.acc * dt
+        else:
+            if abs(self.vel[1]) < 0.1:
+                self.vel[1] = 0
+            else:
+                self.vel[1] *= 0.99
+                
         if keys[pygame.K_a] == 1:
-            self.x -= self.vel
-        if keys[pygame.K_d] == 1:
-            self.x += self.vel
+            self.vel[0] -= self.acc * dt
+        elif keys[pygame.K_d] == 1:
+            self.vel[0] += self.acc * dt
+        else:
+            if abs(self.vel[0]) < 0.1:
+                self.vel[0] = 0
+            else:
+                self.vel[0] *= 0.99
 
+        self.vel[0] = max(min(self.vel[0], 5),-5)
+        self.vel[1] = max(min(self.vel[1], 5),-5)
+
+        self.x += self.vel[0]
+        self.y += self.vel[1]
         self.pos = (self.x, self.y)
 
     def draw(self):
-        pygame.draw.circle(WINDOW, self.color, (self.x, self.y), self.r)
+        pygame.draw.circle(WINDOW, self.color, (int(self.x), int(self.y)), self.r)
 
     def is_in_sight(self):
         pass
@@ -79,6 +99,7 @@ class Line():
 class Obstacle():
     def __init__(self, points):
         self.points = points
+        self.points_int = [list(map(int, point)) for point in self.points]
         self.color = (220, 130, 80)
         self.x_vel = random.randint(-10,10)/10
         self.y_vel = random.randint(-10,10)/10
@@ -90,9 +111,10 @@ class Obstacle():
         self.x_vel *= random.randint(90,110) / 100
         self.y_vel *= random.randint(90,110) / 100
         self.points = [(i + self.x_vel, j + self.y_vel) for i, j in self.points]
+        self.points_int = [list(map(int, point)) for point in self.points]
 
     def draw(self):
-        pygame.draw.polygon(WINDOW, self.color, self.points)
+        pygame.draw.polygon(WINDOW, self.color, self.points_int)
 
 
 
@@ -168,27 +190,29 @@ def calc_intersect(line1, line2) :
       
     y = m1 * x + b1
     #y2 = m2 * x + b2
-    return (int(x),int(y))
+    return (x,y)
 
 
 def get_intersection(line1, line2):
+    if line1[0] == line2[1] or line1[1] == line2[1]:
+        return None
     intersection_pt = calc_intersect(line1, line2)
 
     if (line1[0][0] < line1[1][0]):
-        if intersection_pt[0] <= line1[0][0] or intersection_pt[0] >= line1[1][0]:
+        if intersection_pt[0] < line1[0][0] or intersection_pt[0] > line1[1][0]:
             return None
     else:
-        if intersection_pt[0] >= line1[0][0] or intersection_pt[0] <= line1[1][0]:
+        if intersection_pt[0] > line1[0][0] or intersection_pt[0] < line1[1][0]:
             return None
          
     if (line2[0][0] < line2[1][0]):
-        if intersection_pt[0] <= line2[0][0] or intersection_pt[0] >= line2[1][0]:
+        if intersection_pt[0] < line2[0][0] or intersection_pt[0] > line2[1][0]:
             return None
     else:
-        if intersection_pt[0] >= line2[0][0] or intersection_pt[0] <= line2[1][0]:
+        if intersection_pt[0] > line2[0][0] or intersection_pt[0] < line2[1][0]:
             return None
 
-    return intersection_pt
+    return list(map(int, calc_intersect(line1, line2)))
 
 
 def check_intersection(obstacles, drone):
@@ -204,29 +228,35 @@ def check_intersection(obstacles, drone):
     return None
 
 
-def update_interaction(intersection_pt, drone):   
-    if not intersection_pt:
+def update_interaction(no_contact, drone, center):   
+    if not no_contact:
         if drone.life >= 0.1:
             drone.life -= 0.1
-        else:
-            #play some music?
-            return False
+            center.life += 0.1
             
     else:
         if drone.life <= 99.9:
             drone.life += 0.1
     
-    if not intersection_pt and not drone.charging:
+    if not no_contact and not drone.charging:
         drone.charging = True
         drone.not_charging = False
         play_music('wummern.mp3')
         
-    elif intersection_pt and not drone.not_charging:
+    elif no_contact and not drone.not_charging:
         drone.not_charging = True
         drone.charging = False
         play_music('idle_wummern.mp3')
 
-    return True
+
+def get_coord_diff(start, end):
+    dx = start[0] - end[0]
+    dy = start[1] - end[1]
+    return dx, dy
+
+def get_distance(start, end):
+    dx, dy = get_coord_diff(start, end)
+    return math.sqrt(dx**2 + dy**2)
 
 
 
@@ -249,7 +279,7 @@ def stop_music(fadeout=False):
     
 
 # Update Game Window ---------------------------------------------- #
-def update_window(drone, obstacles, intersection_pt):
+def update_window(drone, obstacles, center, no_contact):
     '''
     Updates the window
     drone: Drone instance
@@ -257,22 +287,76 @@ def update_window(drone, obstacles, intersection_pt):
     '''
     WINDOW.fill((50, 50, 50))
     
-    pygame.draw.circle(WINDOW, (220, 220, 220), CENTER, 30)
+    pygame.draw.circle(WINDOW, (220, 220, 220), CENTER, 30, 2)
+    pygame.draw.circle(WINDOW, (220, 220, 220), CENTER, int(center.life))
+
+    intersection_pts = []
+    vertex_line = []
+    
+    # ****
+##    test_surf = pygame.Surface((center.life*4, center.life*4))
+##    pygame.draw.circle(test_surf,
+##                       (20,20,20),
+##                       (int(center.life*2), int(center.life*2)),
+##                       int(center.life*2))
+##    test_surf.set_colorkey((0,0,0))
+    # ****
+
+    
+    pygame.draw.circle(WINDOW, (220, 220, 220), CENTER, int(center.life))
 
     pygame.draw.rect(WINDOW, (80,80,80), (WIDTH - 122, 18, 104, 24))
-    pygame.draw.rect(WINDOW, (220, 220, 220), (WIDTH - 120, 20, int(drone.life), 20))
+    if drone.life >= 1:
+        pygame.draw.rect(WINDOW, (220, 220, 220), (WIDTH - 120, 20, int(drone.life), 20))
     
     drone.draw()
     for obstacle in obstacles:
         obstacle.draw()
+        
+    
+    
 
-    if intersection_pt:
+    if no_contact:
         pass
         #pygame.draw.aaline(WINDOW, (220, 130, 80), drone.pos, CENTER)
-        #pygame.draw.circle(WINDOW, (220, 220, 220), intersection_pt, 6, 1)
+        #pygame.draw.circle(WINDOW, (220, 220, 220), no_contact, 6, 1)
     else:
         pygame.draw.aaline(WINDOW, (130, 220, 80), drone.pos, CENTER)
     
+
+    #WINDOW.blit(test_surf, (int(CENTER[0]-center.life*2), int(CENTER[1]-center.life*2)), special_flags=pygame.BLEND_RGBA_ADD)
+
+    #Line of Sight Field
+    # for each obstacle: draw line from player to vertex[i] of obstacle
+    # only draw lines without intersection
+    
+    # and then slightly right and left to vertex
+    # fill triangles
+    
+    for i, obstacle_inner in enumerate(obstacles):
+        for j in range(len(obstacle_inner)):
+            flag_vertex = True
+            vertex = obstacle_inner.points[j]
+            vertex_line.append(vertex)
+            
+            for a, obstacle in enumerate(obstacles):
+                for b in range(len(obstacle)):  
+                    intersection_pt = get_intersection((obstacle.points[b],
+                                                        obstacle.points[(b+1)%(len(obstacle))]),
+                                                       (drone.pos, vertex))
+                    
+                    if intersection_pt:
+                        intersection_pts.append(intersection_pt)
+                        if flag_vertex == True:
+                            flag_vertex = False
+                            vertex_line.pop()
+    
+##    for intersection_pt in intersection_pts:
+##        if intersection_pt:
+##            pygame.draw.circle(WINDOW, (220, 220, 220), intersection_pt, 6, 1)
+    for vertex in vertex_line:
+        pygame.draw.aaline(WINDOW, (222,222,222), vertex, drone.pos)
+        
     pygame.display.update()
 
     
@@ -404,16 +488,16 @@ def level(level):
     print('level_script')
 
     LEVEL_DICT = {
-        1: [Drone((50, 50)),
+        1: [Drone((50, 50), 50),
             []
         ],
-        2: [Drone((50, 50)),
+        2: [Drone((50, 50), 20),
             [
                 Obstacle([(50,50), (40,100), (120,70), (130,50)]),
                 Obstacle([(100,130), (120,160), (130,150)])
             ]
         ],
-        3: [Drone((50, 50)),
+        3: [Drone((50, 50), 30),
             [
                 Obstacle([(50,50), (40,100), (120,70), (130,50)]),
                 Obstacle([(100,130), (120,160), (130,150)]),
@@ -423,8 +507,12 @@ def level(level):
     }
     
     # intro()
-    game(LEVEL_DICT[level])
-    # outro()
+    if game(LEVEL_DICT[level]):
+        pass
+        #lose_outro
+    else:
+        pass
+        #win_outro()
     pass
 
 
@@ -436,6 +524,9 @@ def game(level_objects):
     obstacles = level_objects[1]
 
     run = True
+    win = False
+    center = Drone(CENTER, 5)
+    
     while run:
         main_clock.tick(FPS)
             
@@ -448,25 +539,49 @@ def game(level_objects):
                 if event.key == pygame.K_ESCAPE:
                     run = False
                     stop_music(fadeout=True)
+                    
+                if event.key == pygame.K_SPACE:
+                    pause = True
+                    stop_music(fadeout=True)
+                    print('pause start')
+                    pygame.event.clear()
+                    while pause:
+                        for event in pygame.event.get():
+                            if event.type == pygame.KEYDOWN:
+                                if event.key == pygame.K_SPACE:
+                                    print('pause end')
+                                    pause = False                        
 
         if not run:
             break
+        
+        no_contact = check_intersection(obstacles, drone)
+        update_interaction(no_contact, drone, center)
+       
+        if drone.life < 0.1:
+            run = False
+            win = False
 
-        intersection_pt = check_intersection(obstacles, drone)
-        alive = update_interaction(intersection_pt, drone)
+        if center.life >= 50:
+            run = False
+            win = True
             
-        # Do Stuff 
+        # Do Stuff
         drone.move()
         for obstacle in obstacles:
             obstacle.move()
 
         # Update window
-        update_window(drone, obstacles, intersection_pt)
+        update_window(drone, obstacles, center, no_contact)
 
-        # Alive?
-        if not alive:
-            run = False
-            stop_music(fadeout=True)
+    print('run = False')
+    stop_music(fadeout=True)
+    if win:
+        print('win')
+    else:
+        print('lose')
+        
+    return win
             
 
     
