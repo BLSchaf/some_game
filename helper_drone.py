@@ -194,7 +194,7 @@ def calc_intersect(line1, line2) :
 
 
 def get_intersection(line1, line2):
-    if line1[0] == line2[1] or line1[1] == line2[1]:
+    if line1[0] == line2[1] or line1[1] == line2[1] or line1[0] == line2[0] or line1[1] == line2[0]:
         return None
     intersection_pt = calc_intersect(line1, line2)
 
@@ -215,12 +215,12 @@ def get_intersection(line1, line2):
     return list(map(int, calc_intersect(line1, line2)))
 
 
-def check_intersection(obstacles, drone):
+def check_intersection(obstacles, start, end):
     for obstacle in obstacles:
             for i in range(len(obstacle)):
                 intersection_pt = get_intersection((obstacle.points[i],
                                                     obstacle.points[(i+1)%(len(obstacle))]),
-                                                   (drone.pos, CENTER))
+                                                   (start, end))
                 
                 if intersection_pt:
                     return intersection_pt
@@ -258,6 +258,11 @@ def get_distance(start, end):
     dx, dy = get_coord_diff(start, end)
     return math.sqrt(dx**2 + dy**2)
 
+def get_angle(start, end):
+    dx, dy = get_coord_diff(start, end)
+    return math.atan2(-dy,dx) #rads
+##    degs = degrees(rads)
+
 
 
 
@@ -287,57 +292,19 @@ def update_window(drone, obstacles, center, no_contact):
     '''
     WINDOW.fill((50, 50, 50))
     
-    pygame.draw.circle(WINDOW, (220, 220, 220), CENTER, 30, 2)
-    pygame.draw.circle(WINDOW, (220, 220, 220), CENTER, int(center.life))
+    
 
     intersection_pts = []
-    vertex_line = []
-    
-    # ****
-##    test_surf = pygame.Surface((center.life*4, center.life*4))
-##    pygame.draw.circle(test_surf,
-##                       (20,20,20),
-##                       (int(center.life*2), int(center.life*2)),
-##                       int(center.life*2))
-##    test_surf.set_colorkey((0,0,0))
-    # ****
-
-    
-    pygame.draw.circle(WINDOW, (220, 220, 220), CENTER, int(center.life))
-
-    pygame.draw.rect(WINDOW, (80,80,80), (WIDTH - 122, 18, 104, 24))
-    if drone.life >= 1:
-        pygame.draw.rect(WINDOW, (220, 220, 220), (WIDTH - 120, 20, int(drone.life), 20))
-    
-    drone.draw()
-    for obstacle in obstacles:
-        obstacle.draw()
-        
-    
+    vertex_list = []
     
 
-    if no_contact:
-        pass
-        #pygame.draw.aaline(WINDOW, (220, 130, 80), drone.pos, CENTER)
-        #pygame.draw.circle(WINDOW, (220, 220, 220), no_contact, 6, 1)
-    else:
-        pygame.draw.aaline(WINDOW, (130, 220, 80), drone.pos, CENTER)
-    
 
-    #WINDOW.blit(test_surf, (int(CENTER[0]-center.life*2), int(CENTER[1]-center.life*2)), special_flags=pygame.BLEND_RGBA_ADD)
-
-    #Line of Sight Field
-    # for each obstacle: draw line from player to vertex[i] of obstacle
-    # only draw lines without intersection
-    
-    # and then slightly right and left to vertex
-    # fill triangles
     
     for i, obstacle_inner in enumerate(obstacles):
         for j in range(len(obstacle_inner)):
             flag_vertex = True
             vertex = obstacle_inner.points[j]
-            vertex_line.append(vertex)
+            vertex_list.append(vertex)
             
             for a, obstacle in enumerate(obstacles):
                 for b in range(len(obstacle)):  
@@ -349,14 +316,80 @@ def update_window(drone, obstacles, center, no_contact):
                         intersection_pts.append(intersection_pt)
                         if flag_vertex == True:
                             flag_vertex = False
-                            vertex_line.pop()
+                            vertex_list.pop()
     
 ##    for intersection_pt in intersection_pts:
 ##        if intersection_pt:
 ##            pygame.draw.circle(WINDOW, (220, 220, 220), intersection_pt, 6, 1)
-    for vertex in vertex_line:
-        pygame.draw.aaline(WINDOW, (222,222,222), vertex, drone.pos)
+    for i, vertex in enumerate(vertex_list):
+        #pygame.draw.aaline(WINDOW, (222,222,222), vertex, drone.pos)
         
+        vertex_list[i] = vertex, get_angle(drone.pos, vertex)
+
+    
+    vertex_list.sort(key=lambda tup: tup[1])
+    #print(vertex_list)
+
+    triangles = []
+    for i, vertex in enumerate(vertex_list):
+        flag_triangle = True
+        triangles.append((drone.pos, vertex_list[i][0], vertex_list[(i+1)%(len(vertex_list))][0]))
+        if check_intersection(obstacles,
+                              vertex_list[i][0],
+                              vertex_list[(i+1)%(len(vertex_list))][0]):
+            
+            if flag_triangle == True:
+                flag_triangle = False
+                triangles.pop()
+
+    # draw center
+    pygame.draw.circle(WINDOW, (220, 220, 220), CENTER, 30, 2)
+    pygame.draw.circle(WINDOW, (220, 220, 220), CENTER, int(center.life))
+
+    pygame.draw.circle(WINDOW, (30, 80, 200), (300, 280), 50)
+
+    # draw triangles of sight
+    light_surf = pygame.Surface(SIZE)
+    for triangle in triangles:
+        pygame.draw.polygon(light_surf, (30,30,10), triangle)
+    #test_surf.set_colorkey((0,0,0))
+    WINDOW.blit(light_surf, (0, 0, WIDTH, HEIGHT), special_flags=pygame.BLEND_RGBA_ADD)
+    
+    # draw drone and obstacles    
+    drone.draw()
+    for obstacle in obstacles:
+        obstacle.draw()
+
+    # draw line of sight
+    if no_contact:
+        pass
+        #pygame.draw.aaline(WINDOW, (220, 130, 80), drone.pos, CENTER)
+        #pygame.draw.circle(WINDOW, (220, 220, 220), no_contact, 6, 1)
+    else:
+        pygame.draw.aaline(WINDOW, (130, 220, 80), drone.pos, CENTER)
+        
+    pygame.draw.rect(WINDOW, (80,80,80), (WIDTH - 122, 18, 104, 24))
+    if drone.life >= 1:
+        pygame.draw.rect(WINDOW, (220, 220, 220), (WIDTH - 120, 20, int(drone.life), 20)) 
+
+# ****
+##    test_surf = pygame.Surface((center.life*4, center.life*4))
+##    pygame.draw.circle(test_surf,
+##                       (20,20,20),
+##                       (int(center.life*2), int(center.life*2)),
+##                       int(center.life*2))
+##    test_surf.set_colorkey((0,0,0))
+    # ****
+
+    #WINDOW.blit(test_surf, (int(CENTER[0]-center.life*2), int(CENTER[1]-center.life*2)), special_flags=pygame.BLEND_RGBA_ADD)
+
+    #Line of Sight Field
+    # fill triangles
+    # lines slightly right and left to vertex
+    
+    
+
+    
     pygame.display.update()
 
     
@@ -555,7 +588,7 @@ def game(level_objects):
         if not run:
             break
         
-        no_contact = check_intersection(obstacles, drone)
+        no_contact = check_intersection(obstacles, drone.pos, CENTER)
         update_interaction(no_contact, drone, center)
        
         if drone.life < 0.1:
@@ -569,7 +602,8 @@ def game(level_objects):
         # Do Stuff
         drone.move()
         for obstacle in obstacles:
-            obstacle.move()
+            pass
+        #obstacle.move()
 
         # Update window
         update_window(drone, obstacles, center, no_contact)
