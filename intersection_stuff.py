@@ -56,7 +56,8 @@ def get_intersection(line1, line2):
         if intersection_pt[0] > line2[0][0] or intersection_pt[0] < line2[1][0]:
             return None
 
-    return list(map(int, calc_intersect(line1, line2)))
+    #return list(map(int, calc_intersect(line1, line2)))
+    return calc_intersect(line1, line2)
 
 def check_intersection(polygon, line):
     """ polygon is object with points attribute (list of coord tuples) """

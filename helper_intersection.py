@@ -39,25 +39,26 @@ def calc_intersect(line1, line2) :
 
 
 def get_intersection(line1, line2):
-    if line1[0] == line2[1] or line1[1] == line2[1] or line1[0] == line2[0] or line1[1] == line2[0]:
+    if line1[0] == line2[0]  or line1[0] == line2[1] or line1[1] == line2[1]  or line1[1] == line2[0]:
         return None
     intersection_pt = calc_intersect(line1, line2)
 
     if (line1[0][0] < line1[1][0]):
-        if intersection_pt[0] < line1[0][0] or intersection_pt[0] > line1[1][0]:
+        if intersection_pt[0] <= line1[0][0] or intersection_pt[0] >= line1[1][0]:
             return None
     else:
-        if intersection_pt[0] > line1[0][0] or intersection_pt[0] < line1[1][0]:
+        if intersection_pt[0] >= line1[0][0] or intersection_pt[0] <= line1[1][0]:
             return None
          
     if (line2[0][0] < line2[1][0]):
-        if intersection_pt[0] < line2[0][0] or intersection_pt[0] > line2[1][0]:
+        if intersection_pt[0] <= line2[0][0] or intersection_pt[0] >= line2[1][0]:
             return None
     else:
-        if intersection_pt[0] > line2[0][0] or intersection_pt[0] < line2[1][0]:
+        if intersection_pt[0] >= line2[0][0] or intersection_pt[0] <= line2[1][0]:
             return None
 
-    return list(map(int, calc_intersect(line1, line2)))
+    #return list(map(int, calc_intersect(line1, line2)))
+    return calc_intersect(line1, line2)
 
 
 # Line Stuff ---------------------------------------------- #
