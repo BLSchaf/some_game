@@ -5,6 +5,7 @@ import random
 import math
 from helper_intersection import *
 from helper_classes import Drone, Obstacle, Button
+import pygame.gfxdraw
 
 
 # Setup Window ------------------------------------------------ #
@@ -16,6 +17,9 @@ FPS = 60
 main_clock = pygame.time.Clock()
 
 WINDOW = pygame.display.set_mode(SIZE)
+MASK = pygame.surface.Surface(SIZE).convert_alpha()
+
+
 pygame.display.set_caption('Helper Drone')
 
 TITLE_IMG = pygame.image.load(r'assets\title_green.png').convert()
@@ -35,10 +39,6 @@ CAMPAIGN_BUTTON_ACTIVE = pygame.image.load(os.path.join('assets', 'campaign_butt
 def close_all():
     pygame.quit()
     sys.exit()
-
-
-
-
 
 
 # Music Stuff ----------------------------------------------------- #
@@ -96,13 +96,8 @@ def update_line_of_sight(obstacles, drone):
     # Line to Vertices Intersection
     # get all vertices, although not needed - readability
     vertex_list = [obstacle.points[i] for obstacle in obstacles for i in range(len(obstacle))]
-    vertex_list += [(0,0), (WIDTH, 0), (WIDTH, HEIGHT), (0, HEIGHT)]
     vertex_list_valid = []
     intersection_list = []
-    border_lines = [((0,0), (WIDTH, 0)),
-                    ((0,0), (1, HEIGHT)),
-                    ((0, HEIGHT), (WIDTH, HEIGHT)),
-                    ((WIDTH, HEIGHT), (WIDTH+1, 0))]
     
     #get relevant vertices
     for i, vertex in enumerate(vertex_list):
@@ -116,6 +111,7 @@ def update_line_of_sight(obstacles, drone):
                     vertex_flag = False
                
                         
+        # for relevant vertices create two new rays
         if vertex_flag:
             current_angle = get_angle(drone.pos, vertex)
             vertex_list_valid.append([vertex, current_angle])
@@ -129,44 +125,38 @@ def update_line_of_sight(obstacles, drone):
                 angle_minus += math.pi*2
             angle_change = [angle_plus, angle_minus]
 
-            # *** angle_minus not working ***
-                
-            
-            
             for angle in angle_change:
                 x = drone.pos[0] + math.cos(angle) * radar_len
                 y = drone.pos[1] - math.sin(angle) * radar_len
+                
+                possible_intersects = []
                 for obstacle in obstacles:
                     for j in range(len(obstacle)):
                         obstacle_line = (obstacle.points[j], obstacle.points[(j+1)%(len(obstacle))])
-                        if get_intersection(obstacle_line, (drone.pos, (x, y))):
-                            vertex_flag = False
+                        intersect = get_intersection(obstacle_line, (drone.pos, (x, y)))
+                        if intersect:
+                            possible_intersects.append(intersect)
+
                             
-                if vertex_flag:
-                    for line in border_lines:                    
-                        intersection = get_intersection(line, (drone.pos, (x, y)))
-                        if intersection:
-                            intersection_list.append(intersection)
-                            vertex_list_valid.append([intersection, angle])
+                min_distance = radar_len
+                for intersect in possible_intersects:
+                    distance = get_distance(drone.pos, intersect)
+                    if distance < min_distance:
+                        min_distance = distance
+                        closest_intersect = intersect
+                        
+                intersection_list.append(closest_intersect)
+                vertex_list_valid.append([closest_intersect, angle])
             
 
     # sort all relevant vertices
     vertex_list_valid.sort(key=lambda tup: tup[1])
 
-    # Tirangle Intersection
+    # Tirangles
     triangles = []
     for i, vertex in enumerate(vertex_list_valid):
         vertex_line = vertex_list_valid[i][0], vertex_list_valid[(i+1)%(len(vertex_list_valid))][0]
-        vertex_flag = True
-        for obstacle in obstacles:
-            for j in range(len(obstacle)):
-                obstacle_line = (obstacle.points[j], obstacle.points[(j+1)%(len(obstacle))])
-                intersection = get_intersection(obstacle_line, vertex_line)
-                if intersection:
-                    vertex_flag = False
-                    
-        if vertex_flag:
-            triangles.append((drone.pos, vertex_line[0], vertex_line[1]))
+        triangles.append((drone.pos, vertex_line[0], vertex_line[1]))
 
     return triangles, intersection_list
 
@@ -174,7 +164,8 @@ def update_line_of_sight(obstacles, drone):
 
 # Update Game Window ---------------------------------------------- #
 def update_window(center, triangles, drone, obstacles, intersection_list):
-    WINDOW.fill((50, 50, 50))
+    WINDOW.fill((180,180,180))
+    MASK.fill((0,0,0,255))
     
     # draw center
     pygame.draw.circle(WINDOW, (220, 220, 220), CENTER, 30, 2)
@@ -182,27 +173,40 @@ def update_window(center, triangles, drone, obstacles, intersection_list):
 
     pygame.draw.circle(WINDOW, (30, 80, 200), (300, 280), 50)
 
-    for intersection in intersection_list:
-        pygame.draw.circle(WINDOW, (220, 80, 30), intersection, 6, 1)
+##    for intersection in intersection_list:
+##        pygame.draw.circle(WINDOW, (80, 20, 230), intersection, 6, 1)
 ##  for i, vertex in enumerate(vertex_list):
 ##      pygame.draw.aaline(WINDOW, (222,222,222), vertex, drone.pos)
         
     # draw triangles of sight
-    light_surf = pygame.Surface(SIZE)
-    for i, triangle in enumerate(triangles):
-        pygame.draw.polygon(light_surf, (min(255,(i+1)*10),min(255,(i+1)*20),min(255,(i+1)*3)), triangle)
-    #test_surf.set_colorkey((0,0,0))
-    WINDOW.blit(light_surf, (0, 0, WIDTH, HEIGHT), special_flags=pygame.BLEND_RGBA_ADD)
+##    light_surf = pygame.Surface(SIZE)
+##    for i, triangle in enumerate(triangles):
+##        #pygame.draw.polygon(light_surf, (min(255,(i+1)*10),min(255,(i+1)*20),min(255,(i+1)*3)), triangle)
+##        pygame.draw.polygon(light_surf, (10, 20, 3), triangle)
+##    #test_surf.set_colorkey((0,0,0))
+##    WINDOW.blit(light_surf, (0, 0, WIDTH, HEIGHT), special_flags=pygame.BLEND_RGBA_ADD)
+    
+    for triangle in triangles:
+        pygame.gfxdraw.filled_polygon(MASK, triangle, (0, 0, 0, 0))
+        #pygame.draw.polygon(MASK, (0, 0, 0, 0), triangle)
+
     
     # draw drone and obstacles    
     drone.draw(WINDOW)
+   
+        
+     
+
+    
+    WINDOW.blit(MASK,(0,0))
+    
     for obstacle in obstacles:
         obstacle.draw(WINDOW)
-        
+
     pygame.draw.rect(WINDOW, (80,80,80), (WIDTH - 122, 18, 104, 24))
     if drone.life >= 1:
-        pygame.draw.rect(WINDOW, (220, 220, 220), (WIDTH - 120, 20, int(drone.life), 20)) 
-
+        pygame.draw.rect(WINDOW, (220, 220, 220), (WIDTH - 120, 20, int(drone.life), 20))
+        
     pygame.display.update()
 
     
@@ -332,26 +336,29 @@ def campaign():
 # Level Orchestrator ------------------------------------------------------- #
 def level(level):
     print('level_script')
-    borders = Obstacle([(0,0), (0, WIDTH), (WIDTH, HEIGHT), (0, HEIGHT)])
+    borders = Obstacle([(-1,0), (WIDTH, 0), (WIDTH+1, HEIGHT), (0, HEIGHT)], False)
     LEVEL_DICT = {
         1: [Drone((200, 200), 50),
             [
-                #borders
+                borders
             ]
         ],
         2: [Drone((200, 200), 20),
             [
-                #borders,
+                borders,
                 Obstacle([(50,50), (40,100), (120,70), (130,50)]),
                 Obstacle([(100,130), (120,160), (130,150)])
             ]
         ],
         3: [Drone((200,200), 30),
             [
-                #borders,
+                borders,
                 Obstacle([(50,50), (40,100), (120,70), (130,50)]),
                 Obstacle([(100,130), (120,160), (130,150)]),
-                Obstacle([(400,230), (500,250), (520, 200), (480, 180), (430, 200)])
+                Obstacle([(400,230), (500,250), (520, 200), (480, 180), (430, 200)]),
+                Obstacle([(250, 280), (261,290), (260, 300), (250, 310), (241, 300), (240, 290)]),
+                Obstacle([(50, 300), (120, 380), (30, 280), (40, 290)]),
+                Obstacle([(350, 180), (400, 180), (401, 140), (351, 140)])
             ]
         ]             
     }
@@ -420,6 +427,21 @@ def game(level_objects):
             
         # Do Stuff
         drone.move(FPS)
+        if drone.x <= 0:
+            drone.x = 1
+            drone.vel[0] = 0
+        if drone.x >= WIDTH:
+            drone.x = WIDTH
+            drone.vel[0] = 0
+        if drone.y <= 0:
+            drone.y = 1
+            drone.vel[1] = 0
+        if drone.y >= HEIGHT:
+            drone.y = HEIGHT-1
+            drone.vel[1] = 0
+            
+        drone.update_pos()
+        
 ##        for obstacle in obstacles:
 ##            obstacle.move()
 

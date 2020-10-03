@@ -8,7 +8,7 @@ class Drone():
         self.x = pos[0]
         self.y = pos[1]
         self.r = 10
-        self.color = (180, 180, 200)
+        self.color = (220, 80, 30)
         self.vel = [0,0]
         self.acc = 5
         self.charging = False
@@ -43,7 +43,9 @@ class Drone():
 
         self.x += self.vel[0]
         self.y += self.vel[1]
-        self.pos = (self.x, self.y)
+
+    def update_pos(self):
+         self.pos = (self.x, self.y)
 
     def draw(self, window):
         pygame.draw.circle(window, self.color, (int(self.x), int(self.y)), self.r)
@@ -54,24 +56,27 @@ class Drone():
 
 
 class Obstacle():
-    def __init__(self, points):
+    def __init__(self, points, visible=True):
         self.points = points
         self.points_int = [list(map(int, point)) for point in self.points]
         self.color = (220, 130, 80)
         self.x_vel = random.randint(-10,10)/10
         self.y_vel = random.randint(-10,10)/10
+        self.visible = visible
 
     def __len__(self):
         return len(self.points)
 
     def move(self):
-        self.x_vel *= random.randint(90,110) / 100
-        self.y_vel *= random.randint(90,110) / 100
-        self.points = [(i + self.x_vel, j + self.y_vel) for i, j in self.points]
-        self.points_int = [list(map(int, point)) for point in self.points]
+        if self.visible:
+            self.x_vel *= random.randint(90,110) / 100
+            self.y_vel *= random.randint(90,110) / 100
+            self.points = [(i + self.x_vel, j + self.y_vel) for i, j in self.points]
+            self.points_int = [list(map(int, point)) for point in self.points]
 
     def draw(self, window):
-        pygame.draw.polygon(window, self.color, self.points_int)
+        if self.visible:
+            pygame.draw.polygon(window, self.color, self.points_int)
 
 
 
