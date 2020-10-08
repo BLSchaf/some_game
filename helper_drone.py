@@ -19,6 +19,9 @@ main_clock = pygame.time.Clock()
 WINDOW = pygame.display.set_mode(SIZE)
 MASK = pygame.surface.Surface(SIZE).convert_alpha()
 
+pause_font = pygame.font.SysFont('Matura MT Script Capitals', 60, 1)
+pause_label = pause_font.render('Pause', False, (33, 66, 112))
+
 
 pygame.display.set_caption('Helper Drone')
 
@@ -79,8 +82,9 @@ def update_intersection(obstacles, drone, center):
             drone.life += 0.1       
     else:
         if drone.life >= 0.1:
-            drone.life -= 0.1
-            center.life += 0.1
+            pass
+            #drone.life -= 0.1
+            #center.life += 0.1
         
     if no_contact and drone.charging:
         drone.charging = False
@@ -152,7 +156,7 @@ def update_line_of_sight(obstacles, drone):
     # sort all relevant vertices
     vertex_list_valid.sort(key=lambda tup: tup[1])
 
-    # Tirangles
+    # Tirangles (***no vertex when out of bounds***)
     triangles = []
     for i, vertex in enumerate(vertex_list_valid):
         vertex_line = vertex_list_valid[i][0], vertex_list_valid[(i+1)%(len(vertex_list_valid))][0]
@@ -175,8 +179,8 @@ def update_window(center, triangles, drone, obstacles, intersection_list):
 
 ##    for intersection in intersection_list:
 ##        pygame.draw.circle(WINDOW, (80, 20, 230), intersection, 6, 1)
-##  for i, vertex in enumerate(vertex_list):
-##      pygame.draw.aaline(WINDOW, (222,222,222), vertex, drone.pos)
+##    for i, vertex in enumerate(vertex_list):
+##    pygame.draw.aaline(WINDOW, (222,222,222), vertex, drone.pos)
         
     # draw triangles of sight
 ##    light_surf = pygame.Surface(SIZE)
@@ -206,7 +210,7 @@ def update_window(center, triangles, drone, obstacles, intersection_list):
     pygame.draw.rect(WINDOW, (80,80,80), (WIDTH - 122, 18, 104, 24))
     if drone.life >= 1:
         pygame.draw.rect(WINDOW, (220, 220, 220), (WIDTH - 120, 20, int(drone.life), 20))
-        
+    
     pygame.display.update()
 
     
@@ -336,7 +340,7 @@ def campaign():
 # Level Orchestrator ------------------------------------------------------- #
 def level(level):
     print('level_script')
-    borders = Obstacle([(-1,0), (WIDTH, 0), (WIDTH+1, HEIGHT), (0, HEIGHT)], False)
+    borders = Obstacle([(-1,0), (WIDTH, 0), (WIDTH+1, HEIGHT), (0, HEIGHT)], (0,0), False)
     LEVEL_DICT = {
         1: [Drone((200, 200), 50),
             [
@@ -346,21 +350,21 @@ def level(level):
         2: [Drone((200, 200), 20),
             [
                 borders,
-                Obstacle([(50,50), (40,100), (120,70), (130,50)]),
-                Obstacle([(100,130), (120,160), (130,150)])
+                Obstacle([(10,10), (0,60), (80,30), (90,10)], (200,200)),
+                Obstacle([(0,30), (20,60), (30,50)], (450,150))
             ]
         ],
-        3: [Drone((200,200), 30),
-            [
-                borders,
-                Obstacle([(50,50), (40,100), (120,70), (130,50)]),
-                Obstacle([(100,130), (120,160), (130,150)]),
-                Obstacle([(400,230), (500,250), (520, 200), (480, 180), (430, 200)]),
-                Obstacle([(250, 280), (261,290), (260, 300), (250, 310), (241, 300), (240, 290)]),
-                Obstacle([(50, 300), (120, 380), (30, 280), (40, 290)]),
-                Obstacle([(350, 180), (400, 180), (401, 140), (351, 140)])
-            ]
-        ]             
+##        3: [Drone((200,200), 30),
+##            [
+##                borders,
+##                Obstacle([(50,50), (40,100), (120,70), (130,50)]),
+##                Obstacle([(100,130), (120,160), (130,150)]),
+##                Obstacle([(400,230), (500,250), (520, 200), (480, 180), (430, 200)]),
+##                Obstacle([(250, 280), (261,290), (260, 300), (250, 310), (241, 300), (240, 290)]),
+##                Obstacle([(50, 300), (120, 380), (30, 280), (40, 290)]),
+##                Obstacle([(350, 180), (400, 180), (401, 140), (351, 140)])
+##            ]
+##        ]             
     }
     
     # intro()
@@ -403,6 +407,14 @@ def game(level_objects):
                     print('pause start')
                     pygame.event.clear()
                     while pause:
+                        WINDOW.blit(
+                            pause_label,
+                            (
+                                (WIDTH - pause_label.get_width())//2,
+                                round(HEIGHT*.33 + pause_label.get_height() + 10)
+                            )
+                        )
+                        pygame.display.update()
                         for event in pygame.event.get():
                             if event.type == pygame.KEYDOWN:
                                 if event.key == pygame.K_SPACE:
@@ -417,6 +429,7 @@ def game(level_objects):
         triangles, intersection_list = update_line_of_sight(obstacles, drone)
         update_intersection(obstacles, drone, center)
        
+        # Do Stuff
         if drone.life < 0.1:
             run = False
             win = False
@@ -424,27 +437,31 @@ def game(level_objects):
         if center.life >= 50:
             run = False
             win = True
+
+        for i, obstacle in enumerate(obstacles):
             
-        # Do Stuff
+            drone.repel(obstacle.collision(drone), obstacle)
+            obstacle.move()
+            
+            for other_obstacle in obstacles[i+1:]:
+                obstacle.collision(other_obstacle)
+
+
         drone.move(FPS)
         if drone.x <= 0:
             drone.x = 1
             drone.vel[0] = 0
         if drone.x >= WIDTH:
-            drone.x = WIDTH
+            drone.x = WIDTH-1
             drone.vel[0] = 0
         if drone.y <= 0:
             drone.y = 1
             drone.vel[1] = 0
         if drone.y >= HEIGHT:
-            drone.y = HEIGHT-1
+            drone.y = HEIGHT -1
             drone.vel[1] = 0
-            
         drone.update_pos()
         
-##        for obstacle in obstacles:
-##            obstacle.move()
-
         # Update window
         # draw line of sight
 ##        if no_contact:
