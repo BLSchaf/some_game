@@ -4,6 +4,12 @@ import random
 
 class Drone():
     def __init__(self, pos, life = 10):
+
+        ORIGINAL_SIZE = 20,20
+        ORIGINAL_SURFACE = pygame.Surface(ORIGINAL_SIZE, pygame.SRCALPHA)
+        self.original_surface = ORIGINAL_SURFACE
+        self.surface_rect = self.original_surface.get_rect(center=pos)
+        
         self.pos = pos
         self.x = pos[0]
         self.y = pos[1]
@@ -13,6 +19,9 @@ class Drone():
         self.acc = 5
         self.charging = False
         self.life = life
+        pygame.draw.circle(ORIGINAL_SURFACE, self.color, (10,10), self.r)
+        self.mask = pygame.mask.from_surface(self.original_surface)
+        
         
     def move(self, fps):
         dt = 1 / fps  # to simulate one second for the formula
@@ -46,38 +55,77 @@ class Drone():
 
     def update_pos(self):
          self.pos = (self.x, self.y)
+         self.surface_rect.center = self.pos
 
     def draw(self, window):
-        pygame.draw.circle(window, self.color, (int(self.x), int(self.y)), self.r)
+        window.blit(self.original_surface, self.surface_rect)
 
-    def is_in_sight(self):
-        pass
+    def repel(self, collision, obstacle):
+        if collision:
+            if abs(self.vel[0]) > abs(obstacle.vel[0]):
+                self.vel[0] *= -1.4
+            elif abs(self.vel[0]) < abs(obstacle.vel[0]):
+                self.vel[0] = obstacle.vel[0] * 1.4
+                
+                
+            if abs(self.vel[1]) > abs(obstacle.vel[1]):
+                self.vel[1] *= -1.4
+            elif abs(self.vel[1]) < abs(obstacle.vel[1]):
+                self.vel[1] = obstacle.vel[1] * 1.4
+            
 
 
 
 class Obstacle():
-    def __init__(self, points, visible=True):
-        self.points = points
-        self.points_int = [list(map(int, point)) for point in self.points]
-        self.color = (220, 130, 80)
-        self.x_vel = random.randint(-10,10)/10
-        self.y_vel = random.randint(-10,10)/10
+    def __init__(self, points, center, visible=True):
+        
+        ORIGINAL_SIZE = 200, 200
+        ORIGINAL_SURFACE = pygame.Surface(ORIGINAL_SIZE, pygame.SRCALPHA)
+        self.offset = ORIGINAL_SIZE[0]//2   
+        self.center = center
+        self.points = [(i + center[0], j + center[1]) for i, j in points]
+        self.points_int = [list(map(int, point)) for point in points]
+        
         self.visible = visible
+        if self.visible:
+            self.color = (220, 130, 80)
+            self.points = [(i + center[0]-self.offset, j + center[1]-self.offset) for i, j in points]
+            self.points_int = [list(map(int, point)) for point in points]
+            pygame.draw.polygon(ORIGINAL_SURFACE, self.color, self.points_int)
+
+            # needed for later rotation (rotate from original)
+            self.original_surface = ORIGINAL_SURFACE
+            self.surface_rect = self.original_surface.get_rect(center=self.center)
+            self.mask = pygame.mask.from_surface(self.original_surface)
+
+            self.vel = pygame.math.Vector2(random.randint(-10,10)/10, random.randint(-10,10)/10)
 
     def __len__(self):
         return len(self.points)
 
     def move(self):
         if self.visible:
-            self.x_vel *= random.randint(90,110) / 100
-            self.y_vel *= random.randint(90,110) / 100
-            self.points = [(i + self.x_vel, j + self.y_vel) for i, j in self.points]
+            #self.vel *= random.randint(90,110) / 100
+            self.center += self.vel
+            self.surface_rect.center = self.center
+
+            # points are offset by surface center
+            self.points = [(i + self.vel[0], j + self.vel[1]) for i, j in self.points]
             self.points_int = [list(map(int, point)) for point in self.points]
+    
 
     def draw(self, window):
         if self.visible:
-            pygame.draw.polygon(window, self.color, self.points_int)
+            window.blit(self.original_surface, self.surface_rect)
 
+    def collision(self, obj):
+        if self.visible:
+            offset = self.surface_rect[0] - obj.surface_rect[0],self.surface_rect[1] - obj.surface_rect[1]
+            overlap = obj.mask.overlap(self.mask, offset)
+
+            if overlap:
+                return True
+        
 
 
 class Button():
